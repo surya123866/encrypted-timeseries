@@ -32,7 +32,7 @@ const io = socketIO(server);
 
 io.on("connection", (socket) => {
   socket.on("dataStream", (encryptedStream) => {
-    const passkey = "your_aes_passkey";
+    const passkey = "secretEncrypt@2023";
 
     const messages = encryptedStream.split("|");
     for (const encryptedMessage of messages) {
@@ -48,7 +48,9 @@ io.on("connection", (socket) => {
       }
 
       const payload = JSON.parse(decryptedMessage);
+      console.log(payload);
       // Validate data integrity using the secret_key
+
       const calculatedSecretKey = crypto
         .createHash("sha256")
         .update(JSON.stringify(payload))

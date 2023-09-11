@@ -2,9 +2,6 @@ const socket = require("socket.io-client")("http://localhost:3001");
 const crypto = require("crypto");
 const data = require("./data.json");
 
-// Function to generate a random AES encryption key (for demonstration purposes only)
-const generateRandomAesKey = () => crypto.randomBytes(32).toString("hex");
-
 function generateEncryptedMessage() {
   const randomIndex = Math.floor(Math.random() * data.names.length);
   const name = data.names[randomIndex];
@@ -17,12 +14,19 @@ function generateEncryptedMessage() {
     .update(JSON.stringify(originalMessage))
     .digest("hex");
   const payload = { ...originalMessage, secret_key };
-  const passkey = "your_aes_passkey";
 
-  const cipher = crypto.createCipher("aes-256-ctr", passkey);
-  let encryptedMessage =
-    cipher.update(JSON.stringify(payload), "utf8", "hex") + cipher.final("hex");
-  return encryptedMessage;
+  // Use a secure key management system to generate and manage keys in production.
+  //const passkey = crypto.randomBytes(32); // Generate a 256-bit (32-byte) random key
+  const passkey = "secretEncrypt@2023";
+
+  const iv = crypto.randomBytes(16); // Generate a random initialization vector
+  const cipher = crypto.createCipheriv("aes-256-ctr", passkey, iv);
+  const encryptedPayload = Buffer.concat([
+    iv,
+    cipher.update(JSON.stringify(payload)),
+    cipher.final(),
+  ]);
+  return encryptedPayload.toString("hex");
 }
 
 function getRandomCity() {
@@ -30,7 +34,6 @@ function getRandomCity() {
   return data.cities[randomIndex];
 }
 
-// Function to emit a data stream every 10 seconds
 function emitDataStream() {
   const messageStream = [];
   const messageCount = Math.floor(Math.random() * 451) + 49;
@@ -42,7 +45,6 @@ function emitDataStream() {
   socket.emit("dataStream", messageStream.join("|"));
 }
 
-// Error handling for the socket connection
 socket.on("connect", () => {
   console.log("Connected to the server");
   setInterval(emitDataStream, 10000); // Emit data stream every 10 seconds
@@ -56,7 +58,6 @@ socket.on("error", (error) => {
   console.error("Socket error:", error);
 });
 
-// Handle Ctrl+C to gracefully close the socket connection
 process.on("SIGINT", () => {
   socket.disconnect();
   process.exit(0);
